@@ -11,20 +11,22 @@ const deployHack = async (hack) => {
 
   const serverFilePath = path.join("server", new URL(hack.url).pathname);
 
+  // Force redeployment if the SWF file already exists
   if (fs.existsSync(serverFilePath)) {
-    console.log("SKIPPED");
-    return;
+    console.log("SWF file exists, forcing redeployment...");
+    fs.unlinkSync(serverFilePath);  // Remove the old SWF file
   }
 
-  const tmpDir = crypto.randomUUID();
+  const tmpDir = crypto.randomUUID();  // Create a temporary directory for processing
   fs.mkdirSync(tmpDir);
 
-  const swfFileName = /[^/]*$/.exec(hack.url)[0];
+  const swfFileName = /[^/]*$/.exec(hack.url)[0];  // Extract the SWF file name
   const swfFilePath = path.join(tmpDir, swfFileName);
   fs.mkdirSync(serverFilePath.slice(0, -swfFileName.length), {
     recursive: true,
   });
 
+  console.log(`Downloading original SWF file from URL: ${hack.url}`);
   await downloadFile(hack.url, swfFilePath);
 
   const flmFile = swfFilePath.slice(0, -4) + ".flm";
@@ -44,12 +46,13 @@ const deployHack = async (hack) => {
     fs.appendFileSync(flmFile, lines[lineNumber++ - 1] + "\n");
   }
 
+  console.log(`Reassembling FLM back into SWF for ${hack.title}...`);
   await assemble(flmFile);
 
-  fs.copyFileSync(swfFilePath, serverFilePath);
+  fs.copyFileSync(swfFilePath, serverFilePath);  // Deploy patched SWF to server folder
   fs.rmSync(tmpDir, { recursive: true, force: true });
 
-  console.log("DONE.");
+  console.log(`Patched SWF file deployed to: ${serverFilePath}`);
 };
 
 const undeployHack = (hack) => {
@@ -58,23 +61,29 @@ const undeployHack = (hack) => {
   const serverFilePath = path.join("server", new URL(hack.url).pathname);
 
   if (!fs.existsSync(serverFilePath)) {
-    console.log("SKIPPED");
+    console.log("SWF file not found. Skipping undeployment...");
     return;
   }
 
   fs.unlinkSync(serverFilePath);
-
-  console.log("DONE");
+  console.log("SWF file successfully removed.");
 };
 
 exports.syncHacksOnLocalServer = async () => {
+  console.log("Setting up Flasm...");
   await setupFlasm();
+
   for (const key in availableHacks) {
     const hack = availableHacks[key];
+    console.log(`Checking hack: ${hack.title}`);
     if (currentConfig[key]) {
-      deployHack(hack);
+      console.log(`Hack enabled. Forcing redeployment...`);
+      await deployHack(hack);
     } else {
+      console.log(`Hack disabled. Undeploying...`);
       undeployHack(hack);
     }
   }
+
+  console.log("All hacks synchronized.");
 };

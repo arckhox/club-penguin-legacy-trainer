@@ -24,12 +24,18 @@ app.whenReady().then(async () => {
   setupLocalServer();
   createWindow();
 
-  await syncHacksOnLocalServer();
+  try {
+    await syncHacksOnLocalServer();
+    console.log("Hacks applied successfully");
+  } catch (error) {
+    console.error("Error applying hacks:", error);
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
