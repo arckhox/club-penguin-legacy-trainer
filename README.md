@@ -1,3 +1,4 @@
+I forked and fix this trainer. its working currently working and gives you 100k coins 
 # Club Penguin Legacy Trainer
 
 Back in the day, I was known in the Club Penguin hacking community as PenXZ. In a fit of nostalgia, I wanted to try and make Club Penguin hacks in 2022, but how?
